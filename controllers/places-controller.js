@@ -1,8 +1,8 @@
 const { v4: uuidv4 } = require("uuid");
-
+const { validationResult } = require("express-validator");
 const HttpError = require("../models/http-error");
 
-const DUMMY_PLACES = [
+let DUMMY_PLACES = [
   {
     id: "p1",
     title: "Empire State Building",
@@ -27,21 +27,26 @@ const getPlaceById = (req, res, next) => {
   res.json({ place });
 };
 
-const getPlaceByUserId = (req, res, next) => {
+const getPlacesByUserId = (req, res, next) => {
   const userId = req.params.uid;
-  const place = DUMMY_PLACES.find((p) => {
+  const places = DUMMY_PLACES.filter((p) => {
     return p.creator === userId;
   });
-  if (!place) {
+  if (!places || places.length === 0) {
     // next는 반드시 return 해주야 됨 비동기 적인 처리
     return next(
-      new HttpError("Could not find a place for the provided user id.", 404)
+      new HttpError("Could not find a places for the provided user id.", 404)
     );
   }
-  res.json({ place });
+  res.json({ places });
 };
 
 const createPlace = (req, res, next) => {
+  const errors = validationResult(req);
+  if (errors.isEmpty()) {
+    console.log(errors);
+    throw new HttpError("Invalid inputs passed, check your data", 422);
+  }
   const { title, description, coordinates, address, creator } = req.body;
   const createdPlace = {
     id: uuidv4(),
@@ -58,6 +63,34 @@ const createPlace = (req, res, next) => {
   // 새로운 것을 등록할 때는 201이 관례임
 };
 
+const updatePlace = (req, res, next) => {
+  console.log(req);
+  const { title, description } = req.body;
+  const placeId = req.params.pid;
+
+  const updatedPlace = { ...DUMMY_PLACES.find((p) => p.id === placeId) };
+
+  const placeIndex = DUMMY_PLACES.findIndex((p) => p.id === placeId);
+  updatedPlace.title = title;
+  updatedPlace.description = description;
+
+  DUMMY_PLACES[placeIndex] = updatedPlace;
+  res.status(200).json({ place: updatedPlace, ccc });
+};
+
+const deletePlace = (req, res, next) => {
+  //   const placeId = req.params.pid;
+  //   const place = DUMMY_PLACES.find((p) => p.id === parseInt(placeId));
+  //   const placeIndex = DUMMY_PLACES.indexOf(place);
+  //   DUMMY_PLACES.splice(placeIndex, 1);
+  //   res.send(place);
+  const placeId = req.params.pid;
+  DUMMY_PLACES = DUMMY_PLACES.filter((p) => p.id !== placeId);
+  res.status(200).json({ message: "deleted place." });
+};
+
 exports.getPlaceById = getPlaceById;
-exports.getPlaceByUserId = getPlaceByUserId;
+exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
+exports.updatePlace = updatePlace;
+exports.deletePlace = deletePlace;
