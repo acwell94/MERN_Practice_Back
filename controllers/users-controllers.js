@@ -17,8 +17,7 @@ const getUsers = async (req, res, next) => {
 const signup = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors);
-    next(new HttpError("Invalid inputs passed, check your data", 422));
+    return next(new HttpError("Invalid inputs passed, check your data", 422));
   }
   const { name, email, password } = req.body;
 
@@ -44,8 +43,7 @@ const signup = async (req, res, next) => {
   const createUser = new User({
     name,
     email,
-    image:
-      "http://t1.daumcdn.net/friends/prod/editor/dc8b3d02-a15a-4afa-a88b-989cf2a50476.jpg",
+    image: req.file.path,
     password,
     places: [],
   });
